@@ -1,0 +1,142 @@
+<?php
+namespace Boletos\Bancos;
+
+use Boletos\Boleto;
+
+class BB extends Boleto
+{
+    protected $convenio;
+
+    protected $formato_convenio;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->setCodigoBanco('001')
+            ->geraCodigoBanco()
+            ->setNumeroMoeda(9);
+
+        $this->logo_banco = base64_encode(fread(fopen(self::$basepath . '/templates/imagens/logobb.jpg', 'r'), filesize(self::$basepath . '/templates/imagens/logobb.jpg')));
+    }
+
+    public function getAgenciaCodigoBoleto()
+    {
+        $agencia = $this->formataValor($this->getCedente()->getAgencia(), 4, 0);
+        $conta   = $this->formataValor($this->getCedente()->getConta(), 8, 0);
+
+        return $agencia . '-' . $this->geraModulo11($agencia, 9, 1) . ' / ' . $conta . "-" . $this->geraModulo11($conta, 9, 1);
+    }
+
+    public function calculaDigitoVerificadorCodigoBarras()
+    {
+        return $this->geraModulo11($this->getCodigoBarras(), 9, 1);
+    }
+
+    public function geraCodigoBarras()
+    {
+        parent::verificaCodigoBarras();
+
+        $cedente     = $this->getCedente();
+        $livre_zeros = '000000';
+
+        $codigo_barras  = $this->getCodigoBanco();
+        $codigo_barras .= $this->getNumeroMoeda();
+        $codigo_barras .= $this->geraFatorVencimento();
+        $codigo_barras .= $this->formataValor($this->getValorBoleto(), 10, 0, 'valor');
+        $convenio       = $this->formataValor($this->getConvenio(), $this->getFormatoConvenio(), 0, 'convenio');
+        $nosso_numero   = $this->formataValor($this->getNossoNumero(), (17 - $this->getFormatoConvenio()), 0);
+
+        if ($this->getFormatoConvenio() == '6') {
+            $codigo_barras .= $convenio;
+
+            if ($this->getFormataNossoNumero() == '1') {
+                $nosso_numero   = $this->formataValor($this->getNossoNumero(), 5, 0);
+                $codigo_barras .= $nosso_numero;
+                $codigo_barras .= $cedente->getAgencia();
+                $codigo_barras .= $cedente->getConta();
+                $codigo_barras .= $this->getCarteira();
+
+            } else if ($this->getFormataNossoNumero() == '2') {
+                $nservico = "21";
+                $nosso_numero   = $this->formataValor($this->getNossoNumero(), 17, 0);
+                $codigo_barras .= $nosso_numero;
+                $codigo_barras .= $nservico;
+            }
+        } else {
+            $codigo_barras .= $livre_zeros;
+            $codigo_barras .= $convenio;
+            $codigo_barras .= $nosso_numero;
+            $codigo_barras .= $this->getCarteira();
+        }
+
+        $this->setNossoNumeroBoleto($convenio . $nosso_numero);
+        if ($this->getFormatoConvenio() != 7) {
+            $this->setNossoNumeroBoleto($this->getNossoNumeroBoleto() . "-" . $this->geraModulo11($this->getNossoNumeroBoleto()));
+        }
+
+        $this->codigo_barras    = $codigo_barras;
+        $this->codigo_barras_dv = $this->calculaDigitoVerificadorCodigoBarras();
+        $this->codigo_barras44  = substr($this->getCodigoBarras(), 0, 4) . $this->getCodigoBarrasDv() . substr($this->getCodigoBarras(), 4, 43);
+
+        return $this;
+    }
+
+    public function getLinhaDigitavel()
+    {
+        $codigo = $this->getCodigoBarras44();
+
+        /*
+         * Campo 1 (AAABL.LLLLX)
+         *    AAA = Código do Banco na Câmara de Compensação (BB = 001)
+         *    B = Código da moeda = "9" (*)
+         *    L = Primeiro dígito do Convenio e Nosso Numero
+         *    LLLL = Quatro próximos números do Convenio e/ou Nosso Numero
+         *    X = DAC que amarra o campo 1
+         */
+        $aaa  = substr($codigo, 0, 3);
+        $b    = substr($codigo, 3, 1);
+        $l    = substr($codigo, 19, 1);
+        $llll = substr($codigo, 20, 4);
+        $x    = $this->geraModulo10($aaa . $b . $l . $llll);
+        $campo1 = "$aaa$b$l.$llll$x";
+
+        /*
+         * Campo 2 (LLLLL.LLLLLY)
+         *    LLLLL LLLLL = Próximos dígitos do Convenio e/ou Nosso Numero
+         *    Y = DAC que amarra o campo 2
+         */
+        $lllll1 = substr($codigo, 24, 5);
+        $lllll2 = substr($codigo, 29, 5);
+        $y      = $this->geraModulo10($lllll1 . $lllll2);
+        $campo2 = "$lllll1.$lllll2$y";
+
+
+        /*
+         * Campo 3 (LLLLL.LLLLLZ)
+         *    E = Restante do Convenio e/ou Nosso Número
+         *    F = DAC [Agência /Conta (sem digito verificador) /Carteira/Nosso Número]
+         *    GGGG GGGG = Número da conta corrente com Dígito Verificador
+         *    Z = DAC que amarra o campo 3
+         */
+        $lllll1 = substr($codigo, 34, 5);
+        $lllll2 = substr($codigo, 39, 5);
+        $z = $this->geraModulo10($lllll1 . $lllll2);
+        $campo3 = "$lllll1.$lllll2$z";
+        
+        /*
+         * Campo 4 (K)
+         *    K = DAC do Código de Barras (Mód. 11)
+         */
+        $campo4 = substr($codigo, 4, 1);
+
+
+        /*
+         * Campo 5 (VVVVVVVVVVVVVV)
+         *    VVVVVVVVVVVVVV = Valor do Título (*)
+         */
+        $campo5 = substr($codigo, 5, 14);
+
+        return "$campo1 $campo2 $campo3 $campo4 $campo5";
+    }
+}
