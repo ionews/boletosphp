@@ -1,6 +1,8 @@
 {
     "name": "ionews/boletosphp",
+    "type": "library",
     "description": "gerador de boletos orientado a objetos",
+    "keywords": ["boleto", "oo"],
     "authors": [
         { "name": "Frederico Nantes", "email": "fnantes@ionews.com.br" }
     ],
