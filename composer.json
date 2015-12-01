@@ -6,9 +6,6 @@
     "authors": [
         { "name": "Frederico Nantes", "email": "fnantes@ionews.com.br" }
     ],
-    "require": {
-        "dompdf/dompdf": "^0.6.1"
-    },
     "autoload": {
         "psr-4": {
         	"Boletos\\": "src/"

@@ -1,12 +1,6 @@
 <?php
 namespace Boletos;
 
-// if (!defined('DOMPDF_ENABLE_AUTOLOAD')) {
-//     define('DOMPDF_ENABLE_AUTOLOAD', false);
-// }
-// require(dir(__FILE__) . '/dompdf/dompdf/dompdf_config.inc.php');
-// require_once(__DIR__ . '/../vendor/dompdf/dompdf/include/autoload.inc.php');
-
 /**
  * Classe base para geração de boletos bancários
  * @method string getCodigoBarras()
@@ -343,19 +337,6 @@ abstract class Boleto extends BaseClass
         
         echo $render->html();
     }
-
-    // public function pdf()
-    // {
-    //     $this->geraCodigoBarras();
-
-    //     $ref = new \ReflectionClass($this);
-    //     $pdf = new \DOMPDF();
-    //     $render = new Render($ref->getShortName(), ['boleto' => $this]);
-        
-    //     $pdf->load_html($render->html());
-    //     $pdf->render();
-    //     $pdf->stream("sample.pdf", array("Attachment"=>0));
-    // }
 
     protected function geraCodigoBanco()
     {
