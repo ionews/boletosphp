@@ -79,7 +79,7 @@ class Cedente extends BaseClass
 
     public function setLogo($logo)
     {
-        $this->logo = base64_encode(fread(fopen($logo, $logo)));
+        $this->logo = base64_encode(fread(fopen($logo, 'r'), filesize($logo)));
         return $this;
     }
 
