@@ -309,7 +309,7 @@
                 <td colspan="5" class="noborder"></td>
             </tr>
         </table>
-        
+
         <br>
         <div style="width: 666px" class="linha-pontilhada">Corte na linha pontilhada</div>
         <br>
@@ -395,7 +395,7 @@
                 </td>
                 <td>
                     <div class="titulo">(=) Valor do Documento</div>
-                    <div class="conteudo rtl"><?= $boleto->getValorBoleto() /* $valor_documento */ ?></div>
+                    <div class="conteudo rtl"><?= $boleto->getValorBoleto(true) /* $valor_documento */ ?></div>
                 </td>
             </tr>
             <tr>

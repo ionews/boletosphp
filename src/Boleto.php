@@ -334,7 +334,7 @@ abstract class Boleto extends BaseClass
 
         $ref = new \ReflectionClass($this);
         $render = new Render($ref->getShortName(), ['boleto' => $this]);
-        
+
         echo $render->html();
     }
 
@@ -565,6 +565,7 @@ abstract class Boleto extends BaseClass
             /*
                 retira as virgulas formata o numero preenche com zeros
             */
+            $numero = number_format($numero, 2, ',', '.');
             $numero = str_replace(",", "", $numero);
             $numero = str_replace(".", "", $numero);
             while (strlen($numero) < $loop) {
