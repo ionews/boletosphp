@@ -28,36 +28,13 @@ class BanPara extends Boleto
 
     public function calculaDigitoVerificadorCodigoBarras()
     {
-        $cedente = $this->cedente;
-
-        $campo1  = $this->getCodigoBanco();
-        $campo1 .= $this->getNumeroMoeda();
-        $campo1 .= $cedente->getAgencia();
-        $campo1 .= substr($this->getCarteira(), 0, 1);
-        $campo1 .= $this->geraModulo10($campo1);
-
-        $campo2  = substr($this->getCarteira(), 1);
-        $campo2 .= substr($this->getNossoNumero(), 0, 5);
-        $campo2 .= $this->geraModulo10($campo2);
-
-        $campo3  = substr($this->getNossoNumero(), 7);
-        $campo3 .= $this->geraModulo11($cedente->getAgencia() . $cedente->getConta() . $this->getCarteira() . $this->getNossoNumero());
-        $campo3 .= $this->formataValor($cedente->getConta() . $this->getContaDv(), 8, 0);
-        $campo3 .= $this->geraModulo10($campo3);
-
-        $campo5  = $this->geraFatorVencimento();
-        $campo5 .= $this->formataValor($cedente->getConta() . $this->getContaDv(), 8, 0);
-
-        $linha  = $campo1 . $campo2 . $campo3 . $campo5;
-        $codigo = substr($linha, 0, 4) . substr($linha, 32, 15) . substr($linha, 4, 5) . substr($linha, 10, 10) . substr($linha, 21, 10);
-
-        return $this->geraModulo11($codigo, 9, 1);
+        return $this->geraModulo11($this->codigo_barras, 9, 1);
     }
 
     public function geraCodigoBarras()
     {
         $this->verificaCodigoBarras();
-        
+
         $cedente = $this->cedente;
 
         $codigo_barras  = $this->getCodigoBanco();
@@ -140,7 +117,7 @@ class BanPara extends Boleto
         $uuuu       = substr($codigo, 5, 4);
         $vvvvvvvvvv = substr($codigo, 9, 10);
         $campo5     = $uuuu . $vvvvvvvvvv;
-        
+
         return "$campo1 $campo2 $campo3 $campo4 $campo5";
     }
 }
