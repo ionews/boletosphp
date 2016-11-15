@@ -369,7 +369,7 @@
                 </td>
                 <td>
                     <div class="titulo">Nosso número</div>
-                    <div class="conteudo rtl"><?= $boleto->getNossoNumero() ?></div>
+                    <div class="conteudo rtl"><?= $boleto->getNossoNumeroBoleto() ?></div>
                 </td>
             </tr>
             <tr>

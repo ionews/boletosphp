@@ -25,7 +25,7 @@ class BB extends Boleto
         $agencia = $this->formataValor($this->getCedente()->getAgencia(), 4, 0);
         $conta   = $this->formataValor($this->getCedente()->getConta(), 8, 0);
 
-        return $agencia . '-' . $this->geraModulo11($agencia, 9, 1) . ' / ' . $conta . "-" . $this->geraModulo11($conta, 9, 1);
+        return $agencia . '-' . $this->geraModulo11($agencia, 9, 0) . ' / ' . $conta . "-" . $this->geraModulo11($conta, 9, 0);
     }
 
     public function calculaDigitoVerificadorCodigoBarras()
@@ -45,7 +45,7 @@ class BB extends Boleto
         $codigo_barras .= $this->geraFatorVencimento();
         $codigo_barras .= $this->formataValor($this->getValorBoleto(), 10, 0, 'valor');
         $convenio       = $this->formataValor($this->getConvenio(), $this->getFormatoConvenio(), 0, 'convenio');
-        $nosso_numero   = $this->formataValor($this->getNossoNumero(), (17 - $this->getFormatoConvenio()), 0);
+        $nosso_numero   = $this->formataValor($this->getNossoNumero(), (10 - $this->getFormatoConvenio()), 0);
 
         if ($this->getFormatoConvenio() == '6') {
             $codigo_barras .= $convenio;
@@ -123,7 +123,7 @@ class BB extends Boleto
         $lllll2 = substr($codigo, 39, 5);
         $z = $this->geraModulo10($lllll1 . $lllll2);
         $campo3 = "$lllll1.$lllll2$z";
-        
+
         /*
          * Campo 4 (K)
          *    K = DAC do Código de Barras (Mód. 11)
@@ -138,5 +138,97 @@ class BB extends Boleto
         $campo5 = substr($codigo, 5, 14);
 
         return "$campo1 $campo2 $campo3 $campo4 $campo5";
+    }
+
+    public function geraModulo11($num, $base = 9, $r = 0)
+    {
+        $soma = 0;
+        $fator = 2;
+        for ($i = strlen($num); $i > 0; $i--) {
+            $numeros[$i] = substr($num,$i-1,1);
+            $parcial[$i] = $numeros[$i] * $fator;
+            $soma += $parcial[$i];
+            if ($fator == $base) {
+                $fator = 1;
+            }
+            $fator++;
+        }
+        if ($r == 0) {
+            $soma *= 10;
+            $digito = $soma % 11;
+
+            //corrigido
+            if ($digito == 10) {
+                $digito = "X";
+            }
+
+            /*
+            alterado por mim, Daniel Schultz
+
+            Vamos explicar:
+
+            O módulo 11 só gera os digitos verificadores do nossonumero,
+            agencia, conta e digito verificador com codigo de barras (aquele que fica sozinho e triste na linha digitável)
+            só que é foi um rolo...pq ele nao podia resultar em 0, e o pessoal do phpboleto se esqueceu disso...
+
+            No BB, os dígitos verificadores podem ser X ou 0 (zero) para agencia, conta e nosso numero,
+            mas nunca pode ser X ou 0 (zero) para a linha digitável, justamente por ser totalmente numérica.
+
+            Quando passamos os dados para a função, fica assim:
+
+            Agencia = sempre 4 digitos
+            Conta = até 8 dígitos
+            Nosso número = de 1 a 17 digitos
+
+            A unica variável que passa 17 digitos é a da linha digitada, justamente por ter 43 caracteres
+
+            Entao vamos definir ai embaixo o seguinte...
+
+            se (strlen($num) == 43) { não deixar dar digito X ou 0 }
+            */
+
+            if (strlen($num) == "43") {
+                //então estamos checando a linha digitável
+                if ($digito == "0" or $digito == "X" or $digito > 9) {
+                        $digito = 1;
+                }
+            }
+            return $digito;
+        }
+        elseif ($r == 1){
+            $resto = $soma % 11;
+            return $resto;
+        }
+    }
+
+    protected function geraModulo10($num)
+    {
+        $numtotal10 = 0;
+        $fator = 2;
+
+        for ($i = strlen($num); $i > 0; $i--) {
+            $numeros[$i] = substr($num,$i-1,1);
+            $parcial10[$i] = $numeros[$i] * $fator;
+            $numtotal10 .= $parcial10[$i];
+            if ($fator == 2) {
+                $fator = 1;
+            }
+            else {
+                $fator = 2;
+            }
+        }
+
+        $soma = 0;
+        for ($i = strlen($numtotal10); $i > 0; $i--) {
+            $numeros[$i] = substr($numtotal10,$i-1,1);
+            $soma += $numeros[$i];
+        }
+        $resto = $soma % 10;
+        $digito = 10 - $resto;
+        if ($resto == 0) {
+            $digito = 0;
+        }
+
+        return $digito;
     }
 }
