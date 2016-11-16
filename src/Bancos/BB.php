@@ -30,7 +30,7 @@ class BB extends Boleto
 
     public function calculaDigitoVerificadorCodigoBarras()
     {
-        return $this->geraModulo11($this->getCodigoBarras(), 9, 1);
+        return $this->geraModulo11($this->getCodigoBarras(), 9, 0);
     }
 
     public function geraCodigoBarras()
