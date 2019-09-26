@@ -17,7 +17,7 @@ class BB extends Boleto
             ->geraCodigoBanco()
             ->setNumeroMoeda(9);
 
-        $this->logo_banco = base64_encode(fread(fopen(self::$basepath . '/templates/imagens/logobb.jpg', 'r'), filesize(self::$basepath . '/templates/imagens/logobb.jpg')));
+        $this->logo_banco = base64_encode(fread(fopen(self::$basepath . '/templates/imagens/logobradesco.jpg', 'r'), filesize(self::$basepath . '/templates/imagens/logobradesco.jpg')));
     }
 
     public function getAgenciaCodigoBoleto()
